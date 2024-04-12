@@ -1,5 +1,7 @@
+//flutter pub run build_runner build НЕ ЗАБУДЬ!!!!
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
+import 'package:dio/dio.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,143 +11,90 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MyFormPage(),
-      routes: {
-        '/userInfo': (context) => UserInfoPage(),
-      },
+      home: HomePage(),
     );
   }
 }
 
-class MyFormPage extends StatelessWidget {
-  final _formKey = GlobalKey<FormState>();
+class HomePage extends StatelessWidget {
+  final Dio _dio = Dio();
 
-  TextEditingController _firstNameController = TextEditingController();
-  TextEditingController _lastNameController = TextEditingController();
-  TextEditingController _phoneController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
+  Future<dynamic> fetchPosts() async {
+    final response =
+        await _dio.get('https://jsonplaceholder.typicode.com/posts');
+    return response.data;
+  }
+
+  Future<dynamic> fetchPost() async {
+    final response =
+        await _dio.get('https://jsonplaceholder.typicode.com/posts/1');
+    return response.data;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Form Validation Example'),
+        title: Text(' Example'),
       ),
-      body: Form(
-        key: _formKey,
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            TextFormField(
-              controller: _firstNameController,
-              decoration: InputDecoration(
-                hintText: 'Enter your first name',
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your first name';
-                }
-                return null;
-              },
+            ElevatedButton(
+              onPressed: () => _navigateToShowDataScreen(context, fetchPosts),
+              child: Text('Text1'),
             ),
-            TextFormField(
-              controller: _lastNameController,
-              decoration: InputDecoration(
-                hintText: 'Enter your last name',
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your last name';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _phoneController,
-              decoration: InputDecoration(
-                hintText: 'Enter your phone number',
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                LengthLimitingTextInputFormatter(11),
-              ],
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null ||
-                    value.isEmpty ||
-                    !RegExp(r'^(\+7|8)\d{10}$').hasMatch(value)) {
-                  return 'Please enter a valid phone number';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                hintText: 'Enter your email',
-              ),
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.isEmpty || !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                  return 'Please enter a valid email address';
-                }
-                return null;
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.pushNamed(context, '/userInfo', arguments: {
-                      'firstName': _firstNameController.text,
-                      'lastName': _lastNameController.text,
-                      'phoneNumber': _phoneController.text,
-                      'email': _emailController.text,
-                    });
-                  }
-                },
-                child: Text('Submit'),
-              ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => _navigateToShowDataScreen(context, fetchPost),
+              child: Text('Text21'),
             ),
           ],
         ),
       ),
     );
   }
+
+  void _navigateToShowDataScreen(
+      BuildContext context, Future<dynamic> Function() fetchData) {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ShowDataScreen(fetchData: fetchData)));
+  }
 }
 
-class UserInfoPage extends StatelessWidget {
+class ShowDataScreen extends StatelessWidget {
+  final Future<dynamic> Function() fetchData;
+
+  const ShowDataScreen({Key? key, required this.fetchData}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final Map<String, String> userData =
-        ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('User Info'),
+        title: Text('baza'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'User: ${userData['firstName']} ${userData['lastName']}',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Cell Phone: ${userData['phoneNumber']}',
-              style: TextStyle(fontSize: 20),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Email: ${userData['email']}',
-              style: TextStyle(fontSize: 20),
-            ),
-          ],
-        ),
+      body: FutureBuilder<dynamic>(
+        future: fetchData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else {
+            return SingleChildScrollView(
+              child: snapshot.data is List
+                  ? Column(
+                      children: (snapshot.data as List)
+                          .map((post) => Text(post['title'],
+                              style: TextStyle(fontSize: 18)))
+                          .toList(),
+                    )
+                  : Text(snapshot.data['title'],
+                      style: TextStyle(fontSize: 24)),
+            );
+          }
+        },
       ),
     );
   }
