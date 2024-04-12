@@ -35,7 +35,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(' Example'),
+        title: Text('HTTP Requests Example'),
       ),
       body: Center(
         child: Column(
@@ -43,12 +43,12 @@ class HomePage extends StatelessWidget {
           children: <Widget>[
             ElevatedButton(
               onPressed: () => _navigateToShowDataScreen(context, fetchPosts),
-              child: Text('Text1'),
+              child: Text('Fetch Posts'),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => _navigateToShowDataScreen(context, fetchPost),
-              child: Text('Text21'),
+              child: Text('Fetch Post 1'),
             ),
           ],
         ),
@@ -72,7 +72,7 @@ class ShowDataScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('baza'),
+        title: Text('Data'),
       ),
       body: FutureBuilder<dynamic>(
         future: fetchData(),
